@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include "fatfs_sd.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "LoRa.h"
@@ -33,7 +34,9 @@
 #include "semphr.h"
 #include "event_groups.h"
 
-#include "liquidcrystal_i2c.h"
+#include "File_Handling_RTOS.h"
+#include "DS1307.h"
+#include "i2c-lcd.h"
 #include "DHT22.h"
 #include "NMEA.h"
 #include "uartRingBuffer.h"
@@ -62,7 +65,7 @@ I2C_HandleTypeDef hi2c1;
 SPI_HandleTypeDef hspi1;
 
 UART_HandleTypeDef huart4;
-UART_HandleTypeDef huart5;
+UART_HandleTypeDef huart3;
 
 osThreadId defaultTaskHandle;
 /* USER CODE BEGIN PV */
@@ -91,14 +94,17 @@ float Humidity = 0;
 uint8_t Presence = 0;
 
 //--------RTC--------
-RTC_DateTypeDef gDate;
-RTC_TimeTypeDef gTime;
-char myTime[10];
-char myDate[12];
+RTC_time_t mytime;
+RTC_date_t mydate;
 
 //--------GPS--------
 char GGA[100];
 char RMC[100];
+char lcdBuffer[50];
+int VCCTimeout;
+int flagGGA, flagRMC;
+float fix_latitude, fix_longitude;
+float lat_afterPoint, lon_afterPoint;
 
 //--------BLE--------
 xSemaphoreHandle BLE_Sem;
@@ -114,11 +120,8 @@ QueueHandle_t xQueue1;
 
 GPSSTRUCT gpsData;
 
-char lcdBuffer[50];
-int VCCTimeout;
-int flagGGA, flagRMC;
-float fix_latitude, fix_longitude;
-float lat_afterPoint, lon_afterPoint;
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -126,8 +129,8 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_UART4_Init(void);
-static void MX_UART5_Init(void);
 static void MX_I2C1_Init(void);
+static void MX_USART3_UART_Init(void);
 void StartDefaultTask(void const * argument);
 
 /* USER CODE BEGIN PFP */
@@ -193,7 +196,7 @@ void LoRa_Task(void* pvParameter)
 
 	myLoRa.frequency             = 920;             // default = 433 MHz
 	myLoRa.spredingFactor        = SF_12;           // default = SF_7
-	myLoRa.bandWidth             = BW_250KHz;       // default = BW_125KHz
+	myLoRa.bandWidth             = BW_125KHz;       // default = BW_125KHz
 	myLoRa.crcRate               = CR_4_8;          // default = CR_4_5
 	myLoRa.power                 = POWER_20db;      // default = 20db
 	myLoRa.overCurrentProtection = 150;             // default = 100 mA
@@ -275,7 +278,7 @@ void GPSR_Task(void* pvParameter){
 			sprintf(lcdBuffer, "%02d:%02d:%02d, %02d-%02d-%04d\r\n", gpsData.ggastruct.tim.hour, \
 				  gpsData.ggastruct.tim.min, gpsData.ggastruct.tim.sec, gpsData.rmcstruct.date.Mon, \
 				  gpsData.rmcstruct.date.Day, 2000 + gpsData.rmcstruct.date.Yr);
-			HAL_UART_Transmit(&huart2, (uint8_t *)lcdBuffer, strlen(lcdBuffer), 0xffff);
+			HAL_UART_Transmit(&huart4, (uint8_t *)lcdBuffer, strlen(lcdBuffer), 0xffff);
 			memset(lcdBuffer, '\0', strlen(lcdBuffer));
 			// Convert to google map format
 			lat_afterPoint = gpsData.ggastruct.lcation.latitude - (int)(gpsData.ggastruct.lcation.latitude);
@@ -285,22 +288,23 @@ void GPSR_Task(void* pvParameter){
 			// print the location format
 			sprintf(lcdBuffer, "LAT: %.4f%c, LON: %.4f%c\r\n", fix_latitude, \
 				  gpsData.ggastruct.lcation.NS, fix_longitude, gpsData.ggastruct.lcation.EW);
-			HAL_UART_Transmit(&huart2, (uint8_t *)lcdBuffer, strlen(lcdBuffer), 0xffff);
+			HAL_UART_Transmit(&huart4, (uint8_t *)lcdBuffer, strlen(lcdBuffer), 0xffff);
 			memset(lcdBuffer, '\0', strlen(lcdBuffer));
 		}
 		else if((flagGGA = 1) | (flagRMC = 1)){
-			HAL_UART_Transmit(&huart2, "NO FIX YET !!\r\n", 20, 0xffff);
+			HAL_UART_Transmit(&huart4, "NO FIX YET !!\r\n", 20, 0xffff);
 		}
 
 		if (VCCTimeout <= 0){
 			VCCTimeout = 5000;  // Reset the timeout
 
 			//reset flags
-			flagGGA =flagRMC =0;
+			flagGGA = 0;
+			flagRMC = 0;
 
 			// You are here means the VCC is less, or maybe there is some connection issue
 			// Check the VCC, also you can try connecting to the external 5V
-			HAL_UART_Transmit(&huart2, "VCC Issue, Check Connection\r\n", 20, 0xffff);
+			HAL_UART_Transmit(&huart4, "VCC Issue, Check Connection\r\n", 20, 0xffff);
 		}
 		vTaskDelay(2000);
 	}
@@ -310,79 +314,103 @@ void DHT22_Task(void* pvParameter){
 	int index = 1;
 	while(1){
 		if(xSemaphoreTake(DHT_Sem, 4500) != pdTRUE){
-			HAL_UART_Transmit(&huart2, (uint8_t*)"Unable to acquire semaphore\r\n", 35, 100);
+			HAL_UART_Transmit(&huart4, (uint8_t*)"Unable to acquire semaphore\r\n", 35, 100);
 		}
 		else{
 			if(DHT22_Get_Data(&Temperature, &Humidity) == 1){
 				sprintf (message, "%d. Temp = %.2f C\t RH = %.2f%% \r\n",index++, Temperature, Humidity);
-				HAL_UART_Transmit(&huart2, (uint8_t *)message, strlen(message), 0xffff);
+				HAL_UART_Transmit(&huart4, (uint8_t *)message, strlen(message), 0xffff);
 				memset(message, NULL, strlen(message));
 			}
 		}
 	}
 }
 
-void LCD1602_Task(void* pvParameter){
-	HD44780_Init(2);
-	HD44780_Clear();
+void LCD_Task(void* pvParameter){
+	vTaskDelay(2000);
+	lcd_init();
+	lcd_clear();
+	char* LCD_message;
+	LCD_message = pvPortMalloc(50*sizeof(char));
+	sprintf(LCD_message, "LCD1602 initialization .. \r\n");
+	HAL_UART_Transmit(&huart4, (uint8_t*)LCD_message, strlen(LCD_message), 0xffff);
+	vPortFree(LCD_message);
 	while(1){
-		HD44780_SetCursor(0,0);
-		sprintf(message, "TEMP: %.2f C", Temperature);
-		HD44780_PrintStr(message);
-		memset(message, NULL, strlen(message));
-		HD44780_SetCursor(0,1);
-		sprintf(message, "RH: %.2f%%", Humidity);
-		HD44780_PrintStr(message);
-		memset(message, NULL, strlen(message));
-//		for(int x=0; x<8; x=x++)
-//		{
-//		HD44780_ScrollDisplayLeft();  //HD44780_ScrollDisplayRight();
-//		HAL_Delay(300);
-//		}
-		HAL_UART_Transmit(&huart2, "LCD is very healthy !!!\r\n", 20, 0xffff);
-		vTaskDelay(2000);
-		HD44780_Clear();
-		for(int i = 0; i < 10;i++){
-			get_time();
-			HD44780_SetCursor(0,0);
-			HD44780_PrintStr(myTime);
-			HD44780_SetCursor(0,1);
-			HD44780_PrintStr(myDate);
-			vTaskDelay(500);
-		}
+		lcd_put_cur(0, 0);
+		LCD_message = pvPortMalloc(50*sizeof(char));
+		sprintf(LCD_message, "%02d:%02d:%02d\r\n", mytime.hours, mytime.minutes, mytime.seconds);
+		lcd_send_string(LCD_message);
+		vPortFree(LCD_message);
+
+		lcd_put_cur(1, 0);
+		LCD_message = pvPortMalloc(50*sizeof(char));
+		sprintf(LCD_message, "%02d-%02d-%04d\r\n", mydate.month, mydate.date, mydate.year);
+		lcd_send_string(LCD_message);
+		vPortFree(LCD_message);
+		vTaskDelay(800);
 	}
 }
 
 void SDCARD_Task(void* pvParameter){
+	char *buffer;
 	Mount_SD("/");
 	Format_SD();
 	Create_File("GPSR.TXT");
 	Create_File("TEMP.TXT");
+	Check_SD_Space();
 	Unmount_SD("/");
 
 	int index = 1;
 	while (1){
-		char *buffer = pvPortMalloc(80*sizeof(char));
-		sprintf (buffer, "LAT: %.6f, LON: %.6f\tTime: %02d:%02d:%02d\tDate: %02d-%02d-%02d\n",
-							fix_latitude, fix_longitude,
-							gpsData.ggastruct.tim.hour, gpsData.ggastruct.tim.min, gpsData.ggastruct.tim.sec,
-							gpsData.rmcstruct.date.Mon, gpsData.rmcstruct.date.Day, gpsData.rmcstruct.date.Yr);
 		Mount_SD("/");
+		buffer = pvPortMalloc(50*sizeof(char));
+		sprintf (buffer, "Hi, SD card ! %d\n", index);
 		Update_File("GPSR.TXT", buffer);
-		memset(buffer, NULL, strlen(buffer));
-		sprintf (buffer, "%d. Temp = %.2f C\t RH = %.2f%% \n"
-				"   Time: %02d:%02d:%02d \n"
-				"   Date: %02d-%02d-%02d \n",
-				index, Temperature, Humidity,
-				gTime.Hours, gTime.Minutes, gTime.Seconds,
-				gDate.Month, gDate.Date, 2000 + gDate.Year);
-		Update_File("TEMP.TXT", buffer);
 		vPortFree(buffer);
 		Unmount_SD("/");
 
 		index++;
 
-		vTaskDelay(2000);
+		vTaskDelay(10000);
+	}
+}
+
+void RTC_Task(void* pvParameter){
+	char* RTC_message = pvPortMalloc(50*sizeof(char));
+	if(ds1307_init(&hi2c1)){
+		sprintf(RTC_message, "DS1307 initialization .. fail !\r\n");
+		HAL_UART_Transmit(&huart4, (uint8_t*)RTC_message, strlen(RTC_message), 0xffff);
+		vPortFree(RTC_message);
+		while(1);
+	}
+	RTC_message = pvPortMalloc(50*sizeof(char));
+	sprintf(RTC_message, "DS1307 initialization .. success !\r\n");
+	HAL_UART_Transmit(&huart4, (uint8_t*)RTC_message, strlen(RTC_message), 0xffff);
+	vPortFree(RTC_message);
+	mytime.seconds = 0;
+	mytime.minutes = 0;
+	mytime.hours = 12;
+	mytime.time_format = TIME_FORMAT_24HRS;
+	mydate.date = 30;
+	mydate.day = SATURDAY;
+	mydate.month = 9;
+	mydate.year = 23;
+	ds1307_set_current_time(&mytime);
+	ds1307_set_current_date(&mydate);
+
+	while(1){
+		ds1307_get_current_time(&mytime);
+		RTC_message = pvPortMalloc(50*sizeof(char));
+		sprintf(RTC_message, "Time: %02d:%02d:%02d\r\n", mytime.hours, mytime.minutes, mytime.seconds);
+		HAL_UART_Transmit(&huart4, (uint8_t*)RTC_message, strlen(RTC_message), 0xffff);
+		vPortFree(RTC_message);
+
+		ds1307_get_current_date(&mydate);
+		RTC_message = pvPortMalloc(50*sizeof(char));
+		sprintf(RTC_message, "Date: %02d/%02d/%04d\r\n", mydate.month, mydate.date, (mydate.year +2000));
+		HAL_UART_Transmit(&huart4, (uint8_t*)RTC_message, strlen(RTC_message), 0xffff);
+		vPortFree(RTC_message);
+		vTaskDelay(5000);
 	}
 }
 
@@ -418,16 +446,22 @@ int main(void)
   MX_GPIO_Init();
   MX_SPI1_Init();
   MX_UART4_Init();
-  MX_UART5_Init();
   MX_FATFS_Init();
   MX_I2C1_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
   // UART4 HSE must be set to 8 MHz, which is twice the HSI 16 MHz.
   srand(time(0));
-	xTaskCreate(LED1_Task, "LED1", 128, NULL, 1, NULL);
-	xTaskCreate(LED3_Task, "LED3", 128, NULL, 1, NULL);
-	xTaskCreate(LoRa_Task, "LoRa", 512, NULL, 2, NULL);
-
+  Ringbuf_init();
+  sprintf(message, "System initialization ... \r\n");
+  HAL_UART_Transmit(&huart4, (uint8_t*)message, strlen(message), 0xffff);
+//	xTaskCreate(LED1_Task, "LED1", 128, NULL, 1, NULL);
+//	xTaskCreate(LED3_Task, "LED3", 128, NULL, 1, NULL);
+	xTaskCreate(LoRa_Task, "LoRa", 512, NULL, 3, NULL);
+	xTaskCreate(RTC_Task, "RTC", 256, NULL, 2, NULL);
+	xTaskCreate(SDCARD_Task, "SDCARD", 512, NULL, 2, NULL);
+	xTaskCreate(GPSR_Task, "GPSR", 512, NULL, 1, NULL);
+	xTaskCreate(LCD_Task, "LCD", 256, NULL, 1, NULL);
 	vTaskStartScheduler();
 
   /* USER CODE END 2 */
@@ -450,15 +484,6 @@ int main(void)
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
-  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
-
-  /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
-
-  /* Start scheduler */
-  osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
@@ -649,37 +674,37 @@ static void MX_UART4_Init(void)
 }
 
 /**
-  * @brief UART5 Initialization Function
+  * @brief USART3 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_UART5_Init(void)
+static void MX_USART3_UART_Init(void)
 {
 
-  /* USER CODE BEGIN UART5_Init 0 */
+  /* USER CODE BEGIN USART3_Init 0 */
 
-  /* USER CODE END UART5_Init 0 */
+  /* USER CODE END USART3_Init 0 */
 
-  /* USER CODE BEGIN UART5_Init 1 */
+  /* USER CODE BEGIN USART3_Init 1 */
 
-  /* USER CODE END UART5_Init 1 */
-  huart5.Instance = UART5;
-  huart5.Init.BaudRate = 115200;
-  huart5.Init.WordLength = UART_WORDLENGTH_8B;
-  huart5.Init.StopBits = UART_STOPBITS_1;
-  huart5.Init.Parity = UART_PARITY_NONE;
-  huart5.Init.Mode = UART_MODE_TX_RX;
-  huart5.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart5.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart5.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart5.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart5) != HAL_OK)
+  /* USER CODE END USART3_Init 1 */
+  huart3.Instance = USART3;
+  huart3.Init.BaudRate = 9600;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart3.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart3) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN UART5_Init 2 */
+  /* USER CODE BEGIN USART3_Init 2 */
 
-  /* USER CODE END UART5_Init 2 */
+  /* USER CODE END USART3_Init 2 */
 
 }
 
@@ -704,9 +729,6 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(SDCARD_CS_GPIO_Port, SDCARD_CS_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, LD1_Pin|LD3_Pin|LD2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
@@ -714,6 +736,9 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(USB_PowerSwitchOn_GPIO_Port, USB_PowerSwitchOn_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(SDCARD_CS_GPIO_Port, SDCARD_CS_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin : USER_Btn_Pin */
   GPIO_InitStruct.Pin = USER_Btn_Pin;
@@ -726,13 +751,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(DIO0_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : SDCARD_CS_Pin */
-  GPIO_InitStruct.Pin = SDCARD_CS_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(SDCARD_CS_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LD1_Pin LD3_Pin LD2_Pin */
   GPIO_InitStruct.Pin = LD1_Pin|LD3_Pin|LD2_Pin;
@@ -760,6 +778,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(USB_OverCurrent_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : SDCARD_CS_Pin */
+  GPIO_InitStruct.Pin = SDCARD_CS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
+  HAL_GPIO_Init(SDCARD_CS_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI4_IRQn, 5, 0);

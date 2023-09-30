@@ -64,8 +64,6 @@ void Error_Handler(void);
 #define DIO0_Pin GPIO_PIN_4
 #define DIO0_GPIO_Port GPIOA
 #define DIO0_EXTI_IRQn EXTI4_IRQn
-#define SDCARD_CS_Pin GPIO_PIN_4
-#define SDCARD_CS_GPIO_Port GPIOC
 #define LD1_Pin GPIO_PIN_0
 #define LD1_GPIO_Port GPIOB
 #define NSS_Pin GPIO_PIN_12
@@ -78,6 +76,8 @@ void Error_Handler(void);
 #define USB_PowerSwitchOn_GPIO_Port GPIOG
 #define USB_OverCurrent_Pin GPIO_PIN_7
 #define USB_OverCurrent_GPIO_Port GPIOG
+#define SDCARD_CS_Pin GPIO_PIN_6
+#define SDCARD_CS_GPIO_Port GPIOC
 #define TMS_Pin GPIO_PIN_13
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14

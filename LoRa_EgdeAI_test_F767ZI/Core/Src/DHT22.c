@@ -4,7 +4,7 @@
  *  Created on: Jun 10, 2023
  *      Author: e1406
  */
-#include "stm32f4xx_hal.h"
+#include "stm32f7xx_hal.h"
 #include "DHT22.h"
 
 

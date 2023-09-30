@@ -8,7 +8,7 @@
 #ifndef INC_UARTRINGBUFFER_H_
 #define INC_UARTRINGBUFFER_H_
 
-#include "stm32f4xx_hal.h"
+#include "stm32f7xx_hal.h"
 
 /* change the size of the buffer */
 #define UART_BUFFER_SIZE 512

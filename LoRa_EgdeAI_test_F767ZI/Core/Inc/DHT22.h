@@ -8,7 +8,7 @@
 #ifndef INC_DHT22_H_
 #define INC_DHT22_H_
 
-#include "stm32f4xx_hal.h"
+#include "stm32f7xx_hal.h"
 
 void delay(uint16_t );
 void DHT22_Start(void);

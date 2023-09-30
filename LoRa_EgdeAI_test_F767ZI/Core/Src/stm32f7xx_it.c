@@ -22,6 +22,7 @@
 #include "stm32f7xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "uartRingBuffer.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -52,9 +53,24 @@
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+volatile uint8_t FatFsCnt = 0;
+volatile uint8_t Timer1, Timer2;
+
+void SDTimer_Handler(void){
+	if(Timer1 > 0)
+		Timer1--;
+
+	if(Timer2 > 0)
+		Timer2--;
+}
+
+extern void Uart_isr(UART_HandleTypeDef* huart);
+extern uint16_t timeout;
+extern int VCCTimeout;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
+extern UART_HandleTypeDef huart3;
 extern TIM_HandleTypeDef htim7;
 
 /* USER CODE BEGIN EV */
@@ -174,11 +190,34 @@ void EXTI4_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles USART3 global interrupt.
+  */
+void USART3_IRQHandler(void)
+{
+  /* USER CODE BEGIN USART3_IRQn 0 */
+	Uart_isr(&huart3);
+  /* USER CODE END USART3_IRQn 0 */
+//  HAL_UART_IRQHandler(&huart3);
+  /* USER CODE BEGIN USART3_IRQn 1 */
+
+  /* USER CODE END USART3_IRQn 1 */
+}
+
+/**
   * @brief This function handles TIM7 global interrupt.
   */
 void TIM7_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM7_IRQn 0 */
+	if(timeout > 0) timeout--;
+	if(VCCTimeout > 0) VCCTimeout--;
+
+	FatFsCnt++;
+	if(FatFsCnt >= 10)
+	{
+		FatFsCnt = 0;
+		SDTimer_Handler();
+	}
 
   /* USER CODE END TIM7_IRQn 0 */
   HAL_TIM_IRQHandler(&htim7);

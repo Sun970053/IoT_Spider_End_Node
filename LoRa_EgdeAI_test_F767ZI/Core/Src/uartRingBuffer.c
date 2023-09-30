@@ -10,9 +10,9 @@
 
 /**** define the UART you are using  ****/
 
-extern UART_HandleTypeDef huart6;
+extern UART_HandleTypeDef huart3;
 
-#define uart &huart6
+#define uart &huart3
 
 #define TIMEOUT_DEF 500  // 500ms timeout for the functions
 uint16_t timeout;
@@ -325,11 +325,11 @@ again:
 
 void Uart_isr (UART_HandleTypeDef *huart)
 {
-	  uint32_t isrflags   = READ_REG(huart->Instance->SR);
+	  uint32_t isrflags   = READ_REG(huart->Instance->ISR);
 	  uint32_t cr1its     = READ_REG(huart->Instance->CR1);
 
     /* if DR is not empty and the Rx Int is enabled */
-    if (((isrflags & USART_SR_RXNE) != RESET) && ((cr1its & USART_CR1_RXNEIE) != RESET))
+    if (((isrflags & USART_ISR_RXNE) != RESET) && ((cr1its & USART_CR1_RXNEIE) != RESET))
     {
     	 /******************
     	    	      *  @note   PE (Parity error), FE (Framing error), NE (Noise error), ORE (Overrun
@@ -342,14 +342,14 @@ void Uart_isr (UART_HandleTypeDef *huart)
     	    	      * @note   TXE flag is cleared only by a write to the USART_DR register.
 
     	 *********************/
-		huart->Instance->SR;                       /* Read status register */
-        unsigned char c = huart->Instance->DR;     /* Read data register */
+		huart->Instance->ISR;                       /* Read status register */
+        unsigned char c = huart->Instance->RDR;     /* Read data register */
         store_char (c, _rx_buffer);  // store data in buffer
         return;
     }
 
     /*If interrupt is caused due to Transmit Data Register Empty */
-    if (((isrflags & USART_SR_TXE) != RESET) && ((cr1its & USART_CR1_TXEIE) != RESET))
+    if (((isrflags & USART_ISR_TXE) != RESET) && ((cr1its & USART_CR1_TXEIE) != RESET))
     {
     	if(tx_buffer.head == tx_buffer.tail)
     	    {
@@ -376,8 +376,8 @@ void Uart_isr (UART_HandleTypeDef *huart)
 
     	      *********************/
 
-    	      huart->Instance->SR;
-    	      huart->Instance->DR = c;
+    	      huart->Instance->ISR;
+    	      huart->Instance->RDR = c;
 
     	    }
     	return;
