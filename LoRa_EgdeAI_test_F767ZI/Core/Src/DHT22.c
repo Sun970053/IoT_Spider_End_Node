@@ -8,17 +8,17 @@
 #include "DHT22.h"
 
 
-#define DHT22_PORT GPIOB
-#define DHT22_PIN GPIO_PIN_1
+#define DHT22_PORT GPIOD
+#define DHT22_PIN GPIO_PIN_14
 
-extern TIM_HandleTypeDef htim6;
+extern TIM_HandleTypeDef htim8;
 
 uint8_t Rh_byte1, Rh_byte2, Temp_byte1, Temp_byte2;
 uint16_t SUM, RH, TEMP;
 
 void delay(uint16_t time){
-	__HAL_TIM_SET_COUNTER(&htim6, 0);
-	while((__HAL_TIM_GET_COUNTER(&htim6)) < time);
+	__HAL_TIM_SET_COUNTER(&htim8, 0);
+	while((__HAL_TIM_GET_COUNTER(&htim8)) < time);
 }
 
 void Set_Pin_Output(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin){

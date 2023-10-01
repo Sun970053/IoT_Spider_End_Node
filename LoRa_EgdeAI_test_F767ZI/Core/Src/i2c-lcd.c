@@ -4,7 +4,7 @@
 #include "i2c-lcd.h"
 extern I2C_HandleTypeDef hi2c1;  // change your handler here accordingly
 
-#define SLAVE_ADDRESS_LCD 0x3F // change this according to ur setup
+#define SLAVE_ADDRESS_LCD (0x3F << 1) // change this according to ur setup
 
 void lcd_send_cmd (char cmd)
 {

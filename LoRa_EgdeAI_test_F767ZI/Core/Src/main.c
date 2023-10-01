@@ -36,7 +36,7 @@
 
 #include "File_Handling_RTOS.h"
 #include "DS1307.h"
-#include "i2c-lcd.h"
+#include "liquidcrystal_i2c.h"
 #include "DHT22.h"
 #include "NMEA.h"
 #include "uartRingBuffer.h"
@@ -44,8 +44,6 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-#define DHT22_PORT GPIOB
-#define DHT22_PIN GPIO_PIN_1
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -63,6 +61,9 @@
 I2C_HandleTypeDef hi2c1;
 
 SPI_HandleTypeDef hspi1;
+
+TIM_HandleTypeDef htim1;
+TIM_HandleTypeDef htim8;
 
 UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart3;
@@ -106,11 +107,6 @@ int flagGGA, flagRMC;
 float fix_latitude, fix_longitude;
 float lat_afterPoint, lon_afterPoint;
 
-//--------BLE--------
-xSemaphoreHandle BLE_Sem;
-char message2[50];
-uint8_t rxData = 0;
-uint16_t pulse = 1000;//3999
 struct Message
 {
 	int data;
@@ -131,6 +127,8 @@ static void MX_SPI1_Init(void);
 static void MX_UART4_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART3_UART_Init(void);
+static void MX_TIM1_Init(void);
+static void MX_TIM8_Init(void);
 void StartDefaultTask(void const * argument);
 
 /* USER CODE BEGIN PFP */
@@ -312,8 +310,10 @@ void GPSR_Task(void* pvParameter){
 
 void DHT22_Task(void* pvParameter){
 	int index = 1;
+	vTaskDelay(800);
+	HAL_UART_Transmit(&huart4, (uint8_t*)"DHT22 initialization ..\r\n", 35, 100);
 	while(1){
-		if(xSemaphoreTake(DHT_Sem, 4500) != pdTRUE){
+		if(xSemaphoreTake(DHT_Sem, 2500) != pdTRUE){
 			HAL_UART_Transmit(&huart4, (uint8_t*)"Unable to acquire semaphore\r\n", 35, 100);
 		}
 		else{
@@ -328,24 +328,22 @@ void DHT22_Task(void* pvParameter){
 
 void LCD_Task(void* pvParameter){
 	vTaskDelay(2000);
-	lcd_init();
-	lcd_clear();
+	HD44780_Clear();
 	char* LCD_message;
 	LCD_message = pvPortMalloc(50*sizeof(char));
 	sprintf(LCD_message, "LCD1602 initialization .. \r\n");
 	HAL_UART_Transmit(&huart4, (uint8_t*)LCD_message, strlen(LCD_message), 0xffff);
 	vPortFree(LCD_message);
 	while(1){
-		lcd_put_cur(0, 0);
+		HD44780_SetCursor(0, 0);
 		LCD_message = pvPortMalloc(50*sizeof(char));
-		sprintf(LCD_message, "%02d:%02d:%02d\r\n", mytime.hours, mytime.minutes, mytime.seconds);
-		lcd_send_string(LCD_message);
+		sprintf(LCD_message, "%02d:%02d:%02d", mytime.hours, mytime.minutes, mytime.seconds);
+		HD44780_PrintStr(LCD_message);
 		vPortFree(LCD_message);
-
-		lcd_put_cur(1, 0);
+		HD44780_SetCursor(0, 1);
 		LCD_message = pvPortMalloc(50*sizeof(char));
-		sprintf(LCD_message, "%02d-%02d-%04d\r\n", mydate.month, mydate.date, mydate.year);
-		lcd_send_string(LCD_message);
+		sprintf(LCD_message, "%02d/%02d/%04d", mydate.month, mydate.date, mydate.year+2000);
+		HD44780_PrintStr(LCD_message);
 		vPortFree(LCD_message);
 		vTaskDelay(800);
 	}
@@ -410,7 +408,7 @@ void RTC_Task(void* pvParameter){
 		sprintf(RTC_message, "Date: %02d/%02d/%04d\r\n", mydate.month, mydate.date, (mydate.year +2000));
 		HAL_UART_Transmit(&huart4, (uint8_t*)RTC_message, strlen(RTC_message), 0xffff);
 		vPortFree(RTC_message);
-		vTaskDelay(5000);
+		vTaskDelay(950);
 	}
 }
 
@@ -449,19 +447,32 @@ int main(void)
   MX_FATFS_Init();
   MX_I2C1_Init();
   MX_USART3_UART_Init();
+  MX_TIM1_Init();
+  MX_TIM8_Init();
   /* USER CODE BEGIN 2 */
   // UART4 HSE must be set to 8 MHz, which is twice the HSI 16 MHz.
   srand(time(0));
   Ringbuf_init();
+  HD44780_Init(2);
+  DHT_Sem = xSemaphoreCreateBinary();
   sprintf(message, "System initialization ... \r\n");
   HAL_UART_Transmit(&huart4, (uint8_t*)message, strlen(message), 0xffff);
+
 //	xTaskCreate(LED1_Task, "LED1", 128, NULL, 1, NULL);
 //	xTaskCreate(LED3_Task, "LED3", 128, NULL, 1, NULL);
+
 	xTaskCreate(LoRa_Task, "LoRa", 512, NULL, 3, NULL);
 	xTaskCreate(RTC_Task, "RTC", 256, NULL, 2, NULL);
 	xTaskCreate(SDCARD_Task, "SDCARD", 512, NULL, 2, NULL);
 	xTaskCreate(GPSR_Task, "GPSR", 512, NULL, 1, NULL);
 	xTaskCreate(LCD_Task, "LCD", 256, NULL, 1, NULL);
+	xTaskCreate(DHT22_Task, "DHT22", 256, NULL, 4, NULL);
+	/*must be put after the HD44780_Init and heap size = 256.
+	Otherwise, it doesn't work, nor do the other task with
+	priority lower than it. */
+	HAL_TIM_Base_Start(&htim8); // us delay timer
+	HAL_TIM_Base_Start_IT(&htim1); // periodic delay timer
+
 	vTaskStartScheduler();
 
   /* USER CODE END 2 */
@@ -639,6 +650,100 @@ static void MX_SPI1_Init(void)
 }
 
 /**
+  * @brief TIM1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM1_Init(void)
+{
+
+  /* USER CODE BEGIN TIM1_Init 0 */
+
+  /* USER CODE END TIM1_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM1_Init 1 */
+
+  /* USER CODE END TIM1_Init 1 */
+  htim1.Instance = TIM1;
+  htim1.Init.Prescaler = 54000-1;
+  htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim1.Init.Period = 8000-1;
+  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim1.Init.RepetitionCounter = 0;
+  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+  sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_UPDATE;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM1_Init 2 */
+
+  /* USER CODE END TIM1_Init 2 */
+
+}
+
+/**
+  * @brief TIM8 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM8_Init(void)
+{
+
+  /* USER CODE BEGIN TIM8_Init 0 */
+
+  /* USER CODE END TIM8_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM8_Init 1 */
+
+  /* USER CODE END TIM8_Init 1 */
+  htim8.Instance = TIM8;
+  htim8.Init.Prescaler = 216-1;
+  htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim8.Init.Period = 65535;
+  htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim8.Init.RepetitionCounter = 0;
+  htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim8, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim8, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM8_Init 2 */
+
+  /* USER CODE END TIM8_Init 2 */
+
+}
+
+/**
   * @brief UART4 Initialization Function
   * @param None
   * @retval None
@@ -725,8 +830,8 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
-  __HAL_RCC_GPIOG_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOG_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, LD1_Pin|LD3_Pin|LD2_Pin, GPIO_PIN_RESET);
@@ -765,6 +870,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : DHT_Pin */
+  GPIO_InitStruct.Pin = DHT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(DHT_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : USB_PowerSwitchOn_Pin */
   GPIO_InitStruct.Pin = USB_PowerSwitchOn_Pin;
@@ -827,7 +938,12 @@ void StartDefaultTask(void const * argument)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   /* USER CODE BEGIN Callback 0 */
+	if (htim->Instance == TIM1){
+		BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
+		xSemaphoreGiveFromISR(DHT_Sem, &xHigherPriorityTaskWoken);
+		portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
+	}
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM7) {
     HAL_IncTick();
