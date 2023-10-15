@@ -457,6 +457,12 @@ int LoRa_getRSSI(LoRa* _LoRa){
 	return -164 + read;
 }
 
+float LoRa_getSNR(LoRa* _LoRa){
+	int8_t read;
+	read = LoRa_read(_LoRa, RegPktSNRValue);
+	return ((int8_t)read) * 0.25;
+}
+
 /* ----------------------------------------------------------------------------- *\
 		name        : LoRa_init
 
