@@ -377,7 +377,7 @@ void Uart_isr (UART_HandleTypeDef *huart)
     	      *********************/
 
     	      huart->Instance->ISR;
-    	      huart->Instance->RDR = c;
+    	      huart->Instance->TDR = c;
 
     	    }
     	return;

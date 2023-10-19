@@ -83,12 +83,13 @@ xTaskHandle GPSR_Task_Handler;
 LoRa myLoRa;
 uint16_t LoRa_status;
 char message[100];
-uint8_t TxBuffer[21];
+uint8_t TxBuffer[22];
 uint8_t RxBuffer[16];
 int rssi;
 float snr;
 char pckt_str[50];
 char pckt_buffer[2];
+uint8_t txflag = 0;
 
 //--------Environment--------
 float Temperature = 0;
@@ -157,19 +158,22 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
   if(GPIO_Pin == DIO0_Pin)
   {
-	  LoRa_receive(&myLoRa, RxBuffer, 16);
-	  rssi = LoRa_getRSSI(&myLoRa);
-	  snr = LoRa_getSNR(&myLoRa);
-	  memset(pckt_str, NULL, strlen(pckt_str));
-	  for(int i =0;i<16;i++)
+	  if(LoRa_receive(&myLoRa, RxBuffer, 16))
 	  {
-		  if(RxBuffer[i] < 16) strcat(pckt_str, "0");
-		  strcat(pckt_str, itoa(RxBuffer[i], pckt_buffer, 16));
-		  strcat(pckt_str, " ");
+		  rssi = LoRa_getRSSI(&myLoRa);
+		  snr = LoRa_getSNR(&myLoRa);
+		  memset(pckt_str, NULL, strlen(pckt_str));
+		  for(int i =0;i<16;i++)
+		  {
+			  if(RxBuffer[i] < 16) strcat(pckt_str, "0");
+			  strcat(pckt_str, itoa(RxBuffer[i], pckt_buffer, 16));
+			  strcat(pckt_str, " ");
+		  }
+		  sprintf(message, "Receive message: %s, RSSI = %d, SNR = %.2f\r\n", pckt_str, rssi, snr);
+		  HAL_UART_Transmit(&huart4, (uint8_t *)message, strlen(message), 0xffff);
+		  memset(message, NULL, strlen(message));
 	  }
-	  sprintf(message, "Receive message: %s, RSSI = %d, SNR = %.2f\r\n", pckt_str, rssi, snr);
-	  HAL_UART_Transmit(&huart4, (uint8_t *)message, strlen(message), 0xffff);
-	  memset(message, NULL, strlen(message));
+
   }
 	if(GPIO_Pin==USER_Btn_Pin)
 	{
@@ -178,6 +182,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		if(HAL_GPIO_ReadPin(USER_Btn_GPIO_Port, USER_Btn_Pin) == GPIO_PIN_RESET){
 			HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
 			HAL_UART_Transmit(&huart4, (uint8_t*)"Button Interrupt\r\n", strlen(message), 0xffff);
+			// priority higher than gpsr result in flag = 0
 			BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 			xSemaphoreGiveFromISR (LoRa_Sem, &xHigherPriorityTaskWoken);
 			portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
@@ -298,8 +303,7 @@ void LoRa_Task(void* pvParameter)
 				strcat((char*)pckt_strcat, " ");
 			}
 			sprintf(pckt_str, pckt_strcat);
-
-			LoRa_transmit(&myLoRa, TxBuffer, 21, 0xffff);
+			LoRa_transmit(&myLoRa, TxBuffer, 21, 4000);
 			sprintf(message, "Packet size: %d ,Send packet: %s \r\n", sizeof(TxBuffer)/sizeof(TxBuffer[0]), pckt_str);
 			HAL_UART_Transmit(&huart4, (uint8_t *)message, strlen(message), 0xffff);
 			memset(message, NULL, strlen(message));
@@ -312,6 +316,7 @@ void LoRa_Task(void* pvParameter)
 }
 
 void GPSR_Task(void* pvParameter){
+	vTaskDelay(2000);
 	//myGPS_message *locData;
 	while(1){
 
@@ -335,7 +340,7 @@ void GPSR_Task(void* pvParameter){
 		}
 
 
-		if ((flagGGA = 2) | (flagRMC = 2)){
+		if ((flagGGA == 2) | (flagRMC == 2)){
 			// print the time format
 			sprintf(lcdBuffer, "%02d:%02d:%02d, %02d-%02d-%04d\r\n", gpsData.ggastruct.tim.hour, \
 				  gpsData.ggastruct.tim.min, gpsData.ggastruct.tim.sec, gpsData.rmcstruct.date.Mon, \
@@ -356,7 +361,7 @@ void GPSR_Task(void* pvParameter){
 //			locData->fix_lon = fix_longitude;
 //			xQueueSend(GPS_locQueue, &locData, portMAX_DELAY);
 		}
-		else if((flagGGA = 1) | (flagRMC = 1)){
+		else if((flagGGA == 1) | (flagRMC == 1)){
 			HAL_UART_Transmit(&huart4, "NO FIX YET !!\r\n", 20, 0xffff);
 		}
 
@@ -371,7 +376,7 @@ void GPSR_Task(void* pvParameter){
 			// Check the VCC, also you can try connecting to the external 5V
 			HAL_UART_Transmit(&huart4, "VCC Issue, Check Connection\r\n", 20, 0xffff);
 		}
-		vTaskDelay(3000);
+		vTaskDelay(5000);
 	}
 }
 
@@ -443,8 +448,10 @@ void LCD_Task(void* pvParameter){
 }
 
 void SDCARD_Task(void* pvParameter){
+	vTaskDelay(1000);
 	//myGPS_message *RxlocData;
 	myenv_Message *RxenvData;
+//	taskENTER_CRITICAL();
 	char *buffer  = pvPortMalloc(100*sizeof(char));;
 	Mount_SD("/");
 	Format_SD();
@@ -455,11 +462,12 @@ void SDCARD_Task(void* pvParameter){
 	vPortFree(buffer);
 	Check_SD_Space();
 	Unmount_SD("/");
+//	taskEXIT_CRITICAL();
 
 	while (1){
 		//xQueueReceive(GPS_locQueue, &RxlocData, portMAX_DELAY);
 		xQueueReceive(Env_Queue, &RxenvData, portMAX_DELAY);
-		taskENTER_CRITICAL();
+//		taskENTER_CRITICAL();
 		Mount_SD("/");
 		buffer = pvPortMalloc(100*sizeof(char));
 		sprintf(buffer, "%.8f,%.8f,%.2f,%.2f,%02d:%02d:%02d\n", fix_latitude, fix_longitude,
@@ -472,7 +480,7 @@ void SDCARD_Task(void* pvParameter){
 			rxData =0;
 		}
 		Unmount_SD("/");
-		taskEXIT_CRITICAL();
+//		taskEXIT_CRITICAL();
 		vTaskDelay(7000);
 		HAL_UART_Receive_IT(&huart4, &rxData, 1);
 	}
@@ -494,7 +502,7 @@ void RTC_Task(void* pvParameter){
 	mytime.minutes = 0;
 	mytime.hours = 22;
 	mytime.time_format = TIME_FORMAT_24HRS;
-	mydate.date = 14;
+	mydate.date = 15;
 	mydate.day = SATURDAY;
 	mydate.month = 10;
 	mydate.year = 23;
@@ -576,10 +584,10 @@ int main(void)
 //	xTaskCreate(LED1_Task, "LED1", 128, NULL, 1, NULL);
 //	xTaskCreate(LED3_Task, "LED3", 128, NULL, 1, NULL);
 
-	xTaskCreate(LoRa_Task, "LoRa", 512, NULL, 3, NULL);
+	xTaskCreate(LoRa_Task, "LoRa", 1024, NULL, 2, NULL);
 	xTaskCreate(RTC_Task, "RTC", 256, NULL, 2, NULL);
-	xTaskCreate(SDCARD_Task, "SDCARD", 512, NULL, 2, NULL);
-	xTaskCreate(GPSR_Task, "GPSR", 512, NULL, 1, NULL);
+	xTaskCreate(SDCARD_Task, "SDCARD", 512, NULL, 1, NULL);
+	xTaskCreate(GPSR_Task, "GPSR", 512, NULL, 2, NULL);
 	xTaskCreate(LCD_Task, "LCD", 256, NULL, 1, NULL);
 	xTaskCreate(DHT22_Task, "DHT22", 256, NULL, 4, NULL);
 	/*must be put after the HD44780_Init and heap size = 256.
@@ -610,11 +618,15 @@ int main(void)
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
+  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 
   /* Start scheduler */
+  osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
@@ -1021,7 +1033,7 @@ static void MX_GPIO_Init(void)
   HAL_NVIC_SetPriority(EXTI4_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 6, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
