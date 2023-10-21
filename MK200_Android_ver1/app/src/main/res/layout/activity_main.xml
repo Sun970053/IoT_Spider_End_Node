@@ -60,7 +60,7 @@
                     android:layout_width="100dp"
                     android:layout_height="match_parent"
                     android:background="#98CF4A"
-                    android:src="@drawable/ic_battery_3bar"/>
+                    android:src="@drawable/ic_battery_1bar"/>
             </com.google.android.material.card.MaterialCardView>
 
             <RelativeLayout
