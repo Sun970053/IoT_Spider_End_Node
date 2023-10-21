@@ -23,6 +23,14 @@ public class MainActivity extends AppCompatActivity {
         btnMap = findViewById(R.id.btnMap);
         btnShutDown =findViewById(R.id.btnShutDown);
 
+        btnStatus.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, StatusActivity.class);
+                startActivity(intent);
+            }
+        });
+
         btnSettings.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
