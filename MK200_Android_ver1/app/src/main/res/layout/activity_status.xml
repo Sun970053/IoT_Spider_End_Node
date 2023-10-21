@@ -1,9 +1,216 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".StatusActivity">
+    tools:context=".StatusActivity"
+    android:background="?android:attr/colorBackground">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <RelativeLayout
+        android:id="@+id/templateTitle"
+        android:layout_width="match_parent"
+        android:layout_height="160dp"
+        android:background="?attr/colorPrimaryFixed">
+
+        <TextView
+            android:id="@+id/txtStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="系統狀態"
+            android:textColor="?attr/colorPrimary"
+            android:textSize="40sp"
+            android:textStyle="bold" />
+    </RelativeLayout>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardViewStatus"
+        android:layout_width="match_parent"
+        android:layout_height="180dp"
+        android:layout_below="@id/templateTitle"
+        android:layout_marginTop="30dp"
+        android:layout_marginHorizontal="40dp"
+        app:strokeColor="?attr/actionModeSplitBackground"
+        app:strokeWidth="3dp">
+        <RelativeLayout
+            android:id="@+id/templateStatus"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="22dp"
+            android:background="#FAF2DA">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardViewBattery"
+                android:layout_width="100dp"
+                android:layout_height="match_parent"
+                app:cardCornerRadius="10dp">
+                <ImageView
+                    android:id="@+id/imageBattery"
+                    android:layout_width="100dp"
+                    android:layout_height="match_parent"
+                    android:background="#98CF4A"
+                    android:src="@drawable/ic_battery_1bar"/>
+            </com.google.android.material.card.MaterialCardView>
+
+            <RelativeLayout
+                android:id="@+id/templateStatusText"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_toEndOf="@id/cardViewBattery"
+                android:layout_marginStart="30dp"
+                android:layout_centerVertical="true">
+
+                <TextView
+                    android:id="@+id/txtRobotStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="機器人狀態：正常"
+                    android:textColor="?attr/colorAccent"
+                    android:textSize="16sp"/>
+
+                <TextView
+                    android:id="@+id/txtMosquitoAmount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/txtRobotStatus"
+                    android:layout_marginTop="4dp"
+                    android:text="殺蚊數量：0 隻"
+                    android:textColor="?attr/colorAccent"
+                    android:textSize="16sp"/>
+
+                <TextView
+                    android:id="@+id/txtLightStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/txtMosquitoAmount"
+                    android:layout_marginTop="4dp"
+                    android:text="捕蚊燈狀態：關"
+                    android:textColor="?attr/colorAccent"
+                    android:textSize="16sp"/>
+
+                <TextView
+                    android:id="@+id/txtPesticideAmount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/txtLightStatus"
+                    android:layout_marginTop="4dp"
+                    android:text="殺蟲劑量：多"
+                    android:textColor="?attr/colorAccent"
+                    android:textSize="16sp"/>
+
+                <TextView
+                    android:id="@+id/txtActionMode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/txtPesticideAmount"
+                    android:layout_marginTop="4dp"
+                    android:text="行動模式：一般"
+                    android:textColor="?attr/colorAccent"
+                    android:textSize="16sp"/>
+            </RelativeLayout>
+        </RelativeLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <RelativeLayout
+        android:id="@+id/templateStatusDetail"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/cardViewStatus"
+        android:layout_marginTop="28dp"
+        android:layout_marginHorizontal="40dp"
+        android:layout_marginBottom="40dp"
+        android:background="@drawable/settings_background">
+
+        <LinearLayout
+            android:id="@+id/templateStatusDetail1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="15dp"
+            android:layout_marginTop="10dp">
+            <TextView
+                android:layout_weight="1"
+                android:id="@+id/txtLon"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="經度：120.223898" />
+            <TextView
+                android:layout_weight="1"
+                android:id="@+id/txtTemp"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="溫度：26.1 C" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/templateStatusDetail2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/templateStatusDetail1"
+            android:padding="15dp">
+            <TextView
+                android:layout_weight="1"
+                android:id="@+id/txtLat"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="緯度：23.006433"/>
+            <TextView
+                android:layout_weight="1"
+                android:id="@+id/txtHumidity"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="溼度：79.1 %" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/templateStatusDetail3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/templateStatusDetail2"
+            android:padding="15dp">
+            <TextView
+                android:layout_weight="1"
+                android:id="@+id/txtDirection"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="方位：73 度"/>
+            <TextView
+                android:layout_weight="1"
+                android:id="@+id/txtVoice"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="音訊模組狀態：正常" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/templateStatusDetail4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/templateStatusDetail3"
+            android:padding="15dp">
+            <TextView
+                android:layout_weight="1"
+                android:id="@+id/txtDate"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="日期：2023 / 10 / 22"/>
+            <TextView
+                android:layout_weight="1"
+                android:id="@+id/txtTime"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="時間：13 : 10 : 00" />
+        </LinearLayout>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/templateStatusDetail4"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="10dp"
+            android:text="更新"
+            android:textStyle="bold"
+            android:textSize="16sp"/>
+    </RelativeLayout>
+
+</RelativeLayout>
