@@ -52,7 +52,7 @@
             android:layout_alignParentEnd="true"
             android:layout_marginEnd="20dp"
             android:layout_centerVertical="true"
-            android:checked="false" />
+            android:checked="true" />
     </RelativeLayout>
 
     <RelativeLayout
