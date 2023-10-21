@@ -18,9 +18,14 @@ import com.google.android.material.switchmaterial.SwitchMaterial;
 
 public class SettingsActivity extends AppCompatActivity {
 
+    private static String SWITCH_PREFS = "switch_prefs";
+    private static String SWITCH_ON = "switch_on";
+    private static String LIGHT_ON = "switch_light";
+    private static String SAVING_MODE_ON = "switch_mode";
     private MaterialSwitch switchOn, switchLight, switchMode;
     private RelativeLayout templateRobotRoute, templateRobotManualMode;
-    private SharedPreferences sharedPreferences;
+    private SharedPreferences pref;
+    private SharedPreferences.Editor editor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,19 +39,25 @@ public class SettingsActivity extends AppCompatActivity {
         templateRobotRoute = findViewById(R.id.templateRobotRoute);
         templateRobotManualMode = findViewById(R.id.templateRobotManualMode);
 
-        sharedPreferences = getSharedPreferences("switchOn", MODE_PRIVATE);
-        boolean isCheckedOn = sharedPreferences.getBoolean("switchOn", true);
+        pref = getSharedPreferences(SWITCH_PREFS, MODE_PRIVATE);
+        editor = pref.edit();
+
+        boolean isCheckedOn = pref.getBoolean(SWITCH_ON, true);
         switchOn.setChecked(isCheckedOn);
+        boolean isCheckedLight = pref.getBoolean(LIGHT_ON, false);
+        switchLight.setChecked(isCheckedLight);
+        boolean isCheckedMode = pref.getBoolean(SAVING_MODE_ON, false);
+        switchMode.setChecked(isCheckedMode);
 
         switchOn.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
                     Toast.makeText(SettingsActivity.this, "Robot Turn On", Toast.LENGTH_SHORT).show();
-                    sharedPreferences.edit().putBoolean("switchOn", true).apply();
+                    editor.putBoolean(SWITCH_ON, true).apply();
                 } else {
                     Toast.makeText(SettingsActivity.this, "Robot Turn Off", Toast.LENGTH_SHORT).show();
-                    sharedPreferences.edit().putBoolean("switchOn", false).apply();
+                    editor.putBoolean(SWITCH_ON, false).apply();
                 }
             }
         });
@@ -56,8 +67,10 @@ public class SettingsActivity extends AppCompatActivity {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
                     Toast.makeText(SettingsActivity.this, "Light Turn On", Toast.LENGTH_SHORT).show();
+                    editor.putBoolean(LIGHT_ON, true).apply();
                 } else {
                     Toast.makeText(SettingsActivity.this, "Light Turn Off", Toast.LENGTH_SHORT).show();
+                    editor.putBoolean(LIGHT_ON, false).apply();
                 }
             }
         });
@@ -67,8 +80,10 @@ public class SettingsActivity extends AppCompatActivity {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
                     Toast.makeText(SettingsActivity.this, "Power Saving Mode", Toast.LENGTH_SHORT).show();
+                    editor.putBoolean(SAVING_MODE_ON, true).apply();
                 } else {
                     Toast.makeText(SettingsActivity.this, "Normal Mode", Toast.LENGTH_SHORT).show();
+                    editor.putBoolean(SAVING_MODE_ON, false).apply();
                 }
             }
         });
