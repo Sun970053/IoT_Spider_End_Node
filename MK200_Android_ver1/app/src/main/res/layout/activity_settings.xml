@@ -29,7 +29,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/templateTitle"
-        android:layout_marginTop="10dp">
+        android:layout_marginTop="20dp"
+        android:layout_marginStart="18dp"
+        android:layout_marginEnd="18dp"
+        android:background="@drawable/settings_background_top">
 
         <TextView
             android:id="@+id/txtRobotOn"
@@ -57,7 +60,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/templateRobotOn"
-        android:layout_marginTop="10dp">
+        android:layout_marginTop="3dp"
+        android:layout_marginStart="18dp"
+        android:layout_marginEnd="18dp"
+        android:background="@drawable/settings_background_middle">
 
         <TextView
             android:id="@+id/txtLightStatus"
@@ -85,7 +91,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/templateLightSettings"
-        android:layout_marginTop="10dp">
+        android:layout_marginTop="3dp"
+        android:layout_marginStart="18dp"
+        android:layout_marginEnd="18dp"
+        android:background="@drawable/settings_background_bottom">
 
         <TextView
             android:id="@+id/txtRobotMode"
@@ -113,7 +122,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/templateRobotMode"
-        android:layout_marginTop="10dp">
+        android:layout_marginTop="20dp"
+        android:layout_marginStart="18dp"
+        android:layout_marginEnd="18dp"
+        android:background="@drawable/settings_background_top">
 
         <TextView
             android:id="@+id/txtSettingRobotRoute"
@@ -126,13 +138,47 @@
             android:layout_marginTop="12dp"
             android:layout_marginBottom="12dp"/>
 
-        <ImageButton
+        <ImageView
+            android:id="@+id/imageArrowRoute"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/ic_vector_arrow_forward"
-            android:backgroundTint="?android:attr/colorBackground"
+            android:backgroundTint="#00FFFBFE"
             android:layout_centerVertical="true"
-            android:layout_alignParentEnd="true" />
+            android:layout_alignParentEnd="true"
+            android:layout_marginEnd="10dp"/>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/templateRobotManualMode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/templateRobotRoute"
+        android:layout_marginTop="3dp"
+        android:layout_marginStart="18dp"
+        android:layout_marginEnd="18dp"
+        android:background="@drawable/settings_background_bottom">
+
+        <TextView
+            android:id="@+id/txtRobotManualMode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="機器人手動操作模式"
+            android:layout_centerVertical="true"
+            android:textSize="20sp"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp"/>
+
+        <ImageView
+            android:id="@+id/imageArrowManual"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_vector_arrow_forward"
+            android:backgroundTint="#00FFFBFE"
+            android:layout_centerVertical="true"
+            android:layout_alignParentEnd="true"
+            android:layout_marginEnd="10dp" />
     </RelativeLayout>
 
 </RelativeLayout>

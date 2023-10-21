@@ -139,7 +139,7 @@
             android:textSize="20sp" />
 
         <Button
-            android:id="@+id/btnSetting"
+            android:id="@+id/btnSettings"
             android:layout_width="150dp"
             android:layout_height="60dp"
             android:layout_below="@+id/btnStatus"
@@ -151,7 +151,7 @@
             android:id="@+id/btnNews"
             android:layout_width="150dp"
             android:layout_height="60dp"
-            android:layout_below="@+id/btnSetting"
+            android:layout_below="@+id/btnSettings"
             android:layout_marginTop="15dp"
             android:text="登革熱資訊"
             style="@style/Widget.Material3.Button.TonalButton"
