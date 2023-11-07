@@ -67,7 +67,7 @@
                     android:layout_marginHorizontal="5dp"
                     android:ems="10"
                     android:hint="經度"
-                    android:textSize="16sp"/>
+                    android:textSize="16sp" />
                 <EditText
                     android:id="@+id/editTxtLat1"
                     android:layout_width="wrap_content"
@@ -293,6 +293,7 @@
     </com.google.android.material.card.MaterialCardView>
 
     <Button
+        android:id="@+id/btnConfirm"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="確認"

@@ -162,7 +162,7 @@
             android:layout_width="150dp"
             android:layout_height="60dp"
             android:layout_alignParentEnd="true"
-            android:text="數據報告"
+            android:text="系統報告"
             android:textSize="20sp" />
 
         <Button
