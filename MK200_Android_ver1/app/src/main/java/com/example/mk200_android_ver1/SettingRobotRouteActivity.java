@@ -50,8 +50,8 @@ public class SettingRobotRouteActivity extends AppCompatActivity {
     private LocationSettingsRequest mLocationSettingsRequest;
     private Location lastLocation;
     Double d_lat, d_lon;
-    String s_lat = "";
-    String s_lon = "";
+//    String s_lat = "";
+//    String s_lon = "";
     String fetched_address = "";
 
 
@@ -90,12 +90,13 @@ public class SettingRobotRouteActivity extends AppCompatActivity {
         
         btnConfirm = findViewById(R.id.btnConfirm);
 
+        checkLocationPermission();
+
         imageBtnStop1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                checkLocationPermission();
-//                init();
+                init(editTxtLat1, editTxtLon1);
             }
         });
 
@@ -103,8 +104,8 @@ public class SettingRobotRouteActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                checkLocationPermission();
-                init();
+//                checkLocationPermission();
+                init(editTxtLat2, editTxtLon2);
             }
         });
 
@@ -112,8 +113,8 @@ public class SettingRobotRouteActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                checkLocationPermission();
-                init();
+//                checkLocationPermission();
+                init(editTxtLat3, editTxtLon3);
             }
         });
 
@@ -121,8 +122,8 @@ public class SettingRobotRouteActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                checkLocationPermission();
-                init();
+//                checkLocationPermission();
+                init(editTxtLat4, editTxtLon4);
             }
         });
         
@@ -172,10 +173,9 @@ public class SettingRobotRouteActivity extends AppCompatActivity {
                         /**
                          * code for after request for location is granted...
                          */
-                        init();
+//                        init();
                     }
                 }
-                return;
         }
 
     }
@@ -211,16 +211,16 @@ public class SettingRobotRouteActivity extends AppCompatActivity {
      * step 5
      * method for setting text in each EditText
      */
-    public void setStopPoint(EditText edtLat, EditText edtLon) {
-        edtLat.setText(s_lat);
-        edtLon.setText(s_lon);
-    }
+//    public void setStopPoint(EditText edtLat, EditText edtLon) {
+//        edtLat.setText(s_lat);
+//        edtLon.setText(s_lon);
+//    }
 
     /**
      * step 5
      * Receive location
      */
-    private void receiveLocation(@NonNull LocationResult locationResult) {
+    private void receiveLocation(@NonNull LocationResult locationResult, EditText edtLat, EditText edtLon) {
 
         lastLocation = locationResult.getLastLocation();
 
@@ -228,14 +228,16 @@ public class SettingRobotRouteActivity extends AppCompatActivity {
         Log.d(TAG, "Longitude : " + lastLocation.getLongitude());
         Log.d(TAG, "Altitude : " + lastLocation.getAltitude());
 
-        s_lat = String.format(Locale.ROOT, "%.6f", lastLocation.getLatitude());
-        s_lon = String.format(Locale.ROOT, "%.6f", lastLocation.getLongitude());
+        String s_lat = String.format(Locale.ROOT, "%.6f", lastLocation.getLatitude());
+        String s_lon = String.format(Locale.ROOT, "%.6f", lastLocation.getLongitude());
 
         d_lat = lastLocation.getLatitude();
         d_lon = lastLocation.getLongitude();
 
-        editTxtLat1.setText(s_lat);
-        editTxtLon1.setText(s_lon);
+//        setStopPoint(edtLat, edtLon);
+
+        edtLat.setText(s_lat);
+        edtLon.setText(s_lon);
 
         /**
          * code to fetch address from lat lon
@@ -257,7 +259,7 @@ public class SettingRobotRouteActivity extends AppCompatActivity {
     /**
      * step 6
      */
-    public void init() {
+    public void init(EditText edtLat, EditText edtLon) {
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         mSettingsClient = LocationServices.getSettingsClient(this);
@@ -265,7 +267,7 @@ public class SettingRobotRouteActivity extends AppCompatActivity {
             @Override
             public void onLocationResult(@NonNull LocationResult locationResult) {
                 super.onLocationResult(locationResult);
-                receiveLocation(locationResult);
+                receiveLocation(locationResult, edtLat, edtLon);
             }
         };
 
