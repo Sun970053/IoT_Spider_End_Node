@@ -1,7 +1,9 @@
 package com.example.mk200_android_ver1;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
@@ -13,6 +15,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -29,12 +32,7 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.Priority;
 import com.google.android.gms.location.SettingsClient;
-import com.google.android.gms.tasks.OnSuccessListener;
 
-import android.Manifest;
-import android.widget.Toast;
-
-import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
@@ -50,20 +48,25 @@ public class SettingRobotRouteActivity extends AppCompatActivity {
     private LocationSettingsRequest mLocationSettingsRequest;
     private Location lastLocation;
     Double d_lat, d_lon;
-//    String s_lat = "";
-//    String s_lon = "";
     String fetched_address = "";
+
+    private static String LOCATION_PREFS = "location_prefs";
+    private static String LAT_1 = "lat_1";
+    private static String LAT_2 = "lat_2";
+    private static String LAT_3 = "lat_3";
+    private static String LAT_4 = "lat_4";
+    private static String LON_1 = "lon_1";
+    private static String LON_2 = "lon_2";
+    private static String LON_3 = "lon_3";
+    private static String LON_4 = "lon_4";
+    private SharedPreferences pref;
+    private SharedPreferences.Editor editor;
 
 
     private Context context;
     private EditText editTxtLon1, editTxtLat1, editTxtLon2, editTxtLat2, editTxtLon3, editTxtLat3, editTxtLon4, editTxtLat4;
     private ImageButton imageBtnStop1, imageBtnStop2, imageBtnStop3, imageBtnStop4;
     private Button btnConfirm;
-
-/*
-    private FusedLocationProviderClient fusedLocationProviderClient;
-    private final static int REQUEST_CODE = 100;
-*/
 
 
     @Override
@@ -90,6 +93,26 @@ public class SettingRobotRouteActivity extends AppCompatActivity {
         
         btnConfirm = findViewById(R.id.btnConfirm);
 
+        pref = getSharedPreferences(LOCATION_PREFS, MODE_PRIVATE);
+        editor = pref.edit();
+        String defLat1 = pref.getString(LAT_1, "");
+        String defLon1 = pref.getString(LON_1, "");
+        String defLat2 = pref.getString(LAT_2, "");
+        String defLon2 = pref.getString(LON_2, "");
+        String defLat3 = pref.getString(LAT_3, "");
+        String defLon3 = pref.getString(LON_3, "");
+        String defLat4 = pref.getString(LAT_4, "");
+        String defLon4 = pref.getString(LON_4, "");
+
+        editTxtLat1.setText(defLat1);
+        editTxtLon1.setText(defLon1);
+        editTxtLat2.setText(defLat2);
+        editTxtLon2.setText(defLon2);
+        editTxtLat3.setText(defLat3);
+        editTxtLon3.setText(defLon3);
+        editTxtLat4.setText(defLat4);
+        editTxtLon4.setText(defLon4);
+
         checkLocationPermission();
 
         imageBtnStop1.setOnClickListener(new View.OnClickListener() {
@@ -104,7 +127,6 @@ public class SettingRobotRouteActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-//                checkLocationPermission();
                 init(editTxtLat2, editTxtLon2);
             }
         });
@@ -113,7 +135,6 @@ public class SettingRobotRouteActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-//                checkLocationPermission();
                 init(editTxtLat3, editTxtLon3);
             }
         });
@@ -122,7 +143,6 @@ public class SettingRobotRouteActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-//                checkLocationPermission();
                 init(editTxtLat4, editTxtLon4);
             }
         });
@@ -130,6 +150,14 @@ public class SettingRobotRouteActivity extends AppCompatActivity {
         btnConfirm.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                editor.putString(LAT_1, editTxtLat1.getText().toString()).apply();
+                editor.putString(LON_1, editTxtLon1.getText().toString()).apply();
+                editor.putString(LAT_2, editTxtLat2.getText().toString()).apply();
+                editor.putString(LON_2, editTxtLon2.getText().toString()).apply();
+                editor.putString(LAT_3, editTxtLat3.getText().toString()).apply();
+                editor.putString(LON_3, editTxtLon3.getText().toString()).apply();
+                editor.putString(LAT_4, editTxtLat4.getText().toString()).apply();
+                editor.putString(LON_4, editTxtLon4.getText().toString()).apply();
                 Toast.makeText(SettingRobotRouteActivity.this, "路徑設定完成", Toast.LENGTH_SHORT).show();
             }
         });
@@ -208,7 +236,6 @@ public class SettingRobotRouteActivity extends AppCompatActivity {
     }
 
     /**
-     * step 5
      * method for setting text in each EditText
      */
 //    public void setStopPoint(EditText edtLat, EditText edtLon) {
@@ -220,7 +247,7 @@ public class SettingRobotRouteActivity extends AppCompatActivity {
      * step 5
      * Receive location
      */
-    private void receiveLocation(@NonNull LocationResult locationResult, EditText edtLat, EditText edtLon) {
+    private void receiveLocation(@NonNull LocationResult locationResult, @NonNull EditText edtLat, @NonNull EditText edtLon) {
 
         lastLocation = locationResult.getLastLocation();
 
