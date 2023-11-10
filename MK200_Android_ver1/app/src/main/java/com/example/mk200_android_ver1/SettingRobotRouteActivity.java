@@ -158,6 +158,7 @@ public class SettingRobotRouteActivity extends AppCompatActivity {
                 editor.putString(LON_3, editTxtLon3.getText().toString()).apply();
                 editor.putString(LAT_4, editTxtLat4.getText().toString()).apply();
                 editor.putString(LON_4, editTxtLon4.getText().toString()).apply();
+
                 Toast.makeText(SettingRobotRouteActivity.this, "路徑設定完成", Toast.LENGTH_SHORT).show();
             }
         });

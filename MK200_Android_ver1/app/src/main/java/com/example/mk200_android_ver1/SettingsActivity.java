@@ -20,8 +20,11 @@ public class SettingsActivity extends AppCompatActivity {
 
     private static String SWITCH_PREFS = "switch_prefs";
     private static String SWITCH_ON = "switch_on";
+    private static String SWITCH_SENDER = "switch_sender";
     private static String LIGHT_ON = "switch_light";
+    private static String LIGHT_SENDER = "light_sender";
     private static String SAVING_MODE_ON = "switch_mode";
+    private static String MODE_SENDER = "mode_sender";
     private MaterialSwitch switchOn, switchLight, switchMode;
     private RelativeLayout templateRobotRoute, templateRobotManualMode;
     private SharedPreferences pref;
@@ -52,39 +55,59 @@ public class SettingsActivity extends AppCompatActivity {
         switchOn.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+
+                Intent switchOnIntent = new Intent();
+
                 if (isChecked) {
                     Toast.makeText(SettingsActivity.this, "Robot Turn On", Toast.LENGTH_SHORT).show();
                     editor.putBoolean(SWITCH_ON, true).apply();
+                    switchOnIntent.putExtra("SWITCH_SENDER", "開");
                 } else {
                     Toast.makeText(SettingsActivity.this, "Robot Turn Off", Toast.LENGTH_SHORT).show();
                     editor.putBoolean(SWITCH_ON, false).apply();
+                    switchOnIntent.putExtra("SWITCH_SENDER", "關");
                 }
+                setResult(1, switchOnIntent);
             }
         });
 
         switchLight.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+
+                Intent lightIntent = new Intent();
+
                 if (isChecked) {
                     Toast.makeText(SettingsActivity.this, "Light Turn On", Toast.LENGTH_SHORT).show();
                     editor.putBoolean(LIGHT_ON, true).apply();
+                    lightIntent.putExtra("LIGHT_SENDER", "開");
                 } else {
                     Toast.makeText(SettingsActivity.this, "Light Turn Off", Toast.LENGTH_SHORT).show();
                     editor.putBoolean(LIGHT_ON, false).apply();
+                    lightIntent.putExtra("LIGHT_SENDER", "關");
                 }
+                setResult(2, lightIntent);
             }
         });
 
         switchMode.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+
+                Intent modeIntent = new Intent();
+
                 if (isChecked) {
                     Toast.makeText(SettingsActivity.this, "Power Saving Mode", Toast.LENGTH_SHORT).show();
                     editor.putBoolean(SAVING_MODE_ON, true).apply();
+                    modeIntent.putExtra("MODE_SENDER", "省電");
                 } else {
                     Toast.makeText(SettingsActivity.this, "Normal Mode", Toast.LENGTH_SHORT).show();
                     editor.putBoolean(SAVING_MODE_ON, false).apply();
+                    modeIntent.putExtra("MODE_SENDER", "一般");
                 }
+                setResult(3, modeIntent);
             }
         });
 
