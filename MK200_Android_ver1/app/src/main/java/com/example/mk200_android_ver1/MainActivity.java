@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -16,8 +17,14 @@ import android.widget.TextView;
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
+    private static String MAIN_PREFS = "main_prefs";
+    private static String SWITCH_ON = "switch_on";
+    private static String LIGHT_ON = "switch_light";
+    private static String SAVING_MODE_ON = "saving_mode";
     private TextView txtRobotStatusSpace, txtLightStatusSpace, txtActionModeSpace;
     private Button btnStatus, btnSettings, btnNews, btnDataReport, btnMap, btnShutDown;
+    private SharedPreferences pref;
+    private SharedPreferences.Editor editor;
     ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             new ActivityResultCallback<ActivityResult>() {
@@ -31,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
                         if (intent != null) {
                             String Data = intent.getStringExtra("SWITCH_SENDER");
                             txtRobotStatusSpace.setText(Data);
+                            editor.putString(SWITCH_ON, Data).apply();
                         }
                     }
                     if (o.getResultCode() == 2) {
@@ -39,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
                         if (intent != null) {
                             String Data = intent.getStringExtra("LIGHT_SENDER");
                             txtLightStatusSpace.setText(Data);
+                            editor.putString(LIGHT_ON, Data).apply();
                         }
                     }
                     if (o.getResultCode() == 3) {
@@ -47,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
                         if (intent != null) {
                             String Data = intent.getStringExtra("MODE_SENDER");
                             txtActionModeSpace.setText(Data);
+                            editor.putString(SAVING_MODE_ON, Data).apply();
                         }
                     }
                 }
@@ -69,6 +79,18 @@ public class MainActivity extends AppCompatActivity {
         btnMap = findViewById(R.id.btnMap);
         btnShutDown =findViewById(R.id.btnShutDown);
 
+        pref = getSharedPreferences(MAIN_PREFS, MODE_PRIVATE);
+        editor = pref.edit();
+
+        String switch_on = pref.getString(SWITCH_ON, "開");
+        String light_on = pref.getString(LIGHT_ON, "關");
+        String saving_mode = pref.getString(SAVING_MODE_ON, "一般");
+
+        txtActionModeSpace.setText(switch_on);
+        txtLightStatusSpace.setText(light_on);
+        txtActionModeSpace.setText(saving_mode);
+
+
 //        Intent receiverIntent = getIntent();
 //        String switchValue = receiverIntent.getStringExtra("SWITCH_SENDER");
 //        txtRobotStatusSpace.setText(switchValue);
@@ -81,6 +103,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this, StatusActivity.class);
+                intent.putExtra("SWITCH_SENDER", txtRobotStatusSpace.getText().toString());
+                intent.putExtra("LIGHT_SENDER", txtLightStatusSpace.getText().toString());
+                intent.putExtra("MODE_SENDER", txtActionModeSpace.getText().toString());
                 startActivity(intent);
             }
         });

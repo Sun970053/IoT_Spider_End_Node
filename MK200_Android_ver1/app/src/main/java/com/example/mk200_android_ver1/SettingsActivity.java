@@ -20,11 +20,8 @@ public class SettingsActivity extends AppCompatActivity {
 
     private static String SWITCH_PREFS = "switch_prefs";
     private static String SWITCH_ON = "switch_on";
-    private static String SWITCH_SENDER = "switch_sender";
     private static String LIGHT_ON = "switch_light";
-    private static String LIGHT_SENDER = "light_sender";
     private static String SAVING_MODE_ON = "switch_mode";
-    private static String MODE_SENDER = "mode_sender";
     private MaterialSwitch switchOn, switchLight, switchMode;
     private RelativeLayout templateRobotRoute, templateRobotManualMode;
     private SharedPreferences pref;
