@@ -120,6 +120,7 @@ public class SettingRobotRouteActivity extends AppCompatActivity {
             public void onClick(View v) {
 
                 init(editTxtLat1, editTxtLon1);
+                stopLocationUpdates();
             }
         });
 
@@ -128,6 +129,7 @@ public class SettingRobotRouteActivity extends AppCompatActivity {
             public void onClick(View v) {
 
                 init(editTxtLat2, editTxtLon2);
+                stopLocationUpdates();
             }
         });
 
@@ -136,6 +138,7 @@ public class SettingRobotRouteActivity extends AppCompatActivity {
             public void onClick(View v) {
 
                 init(editTxtLat3, editTxtLon3);
+                stopLocationUpdates();
             }
         });
 
@@ -144,6 +147,7 @@ public class SettingRobotRouteActivity extends AppCompatActivity {
             public void onClick(View v) {
 
                 init(editTxtLat4, editTxtLon4);
+                stopLocationUpdates();
             }
         });
         
