@@ -195,95 +195,201 @@
         </RelativeLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <RelativeLayout
+    <LinearLayout
         android:id="@+id/templateStatusDetail"
         android:layout_width="match_parent"
         android:layout_height="185dp"
         android:layout_below="@id/cardViewStatus"
-        android:layout_marginTop="28dp"
+        android:layout_marginTop="30dp"
         android:layout_marginHorizontal="35dp"
         android:background="@drawable/settings_background">
 
         <LinearLayout
-            android:id="@+id/templateStatusDetail1"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="10dp"
-            android:layout_marginTop="10dp">
-            <TextView
-                android:layout_weight="1"
-                android:id="@+id/txtLon"
-                android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <LinearLayout
+                android:id="@+id/templateLon"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="經度：120.223898" />
-            <TextView
-                android:layout_weight="1"
-                android:id="@+id/txtTemp"
-                android:layout_width="0dp"
+                android:layout_marginVertical="10dp">
+                <TextView
+                    android:id="@+id/txtLon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="經度："
+                    android:textSize="14sp"/>
+                <TextView
+                    android:id="@+id/txtLonSpace"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="120.223898"
+                    android:textSize="15sp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/templateLat"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="溫度：26.1 C" />
+                android:layout_marginVertical="10dp">
+                <TextView
+                    android:id="@+id/txtLat"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="緯度："
+                    android:textSize="14sp"/>
+                <TextView
+                    android:id="@+id/txtLatSpace"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="23.006433"
+                    android:textSize="15sp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/templateDirection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="10dp">
+                <TextView
+                    android:id="@+id/txtDirection"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="方位："
+                    android:textSize="14sp"/>
+                <TextView
+                    android:id="@+id/txtDirectionSpace"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="73"
+                    android:textSize="15sp"/>
+                <TextView
+                    android:id="@+id/txtDirectionUnit"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=" 度"
+                    android:textSize="14sp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/templateDate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="10dp">
+                <TextView
+                    android:id="@+id/txtDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="日期："
+                    android:textSize="14sp"/>
+                <TextView
+                    android:id="@+id/txtDateSpace"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="2023/10/22"
+                    android:textSize="15sp"/>
+            </LinearLayout>
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/templateStatusDetail2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/templateStatusDetail1"
-            android:padding="10dp">
-            <TextView
-                android:layout_weight="1"
-                android:id="@+id/txtLat"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:text="緯度：23.006433"/>
-            <TextView
-                android:layout_weight="1"
-                android:id="@+id/txtHumidity"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:text="溼度：79.1 %" />
-        </LinearLayout>
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="12dp">
 
-        <LinearLayout
-            android:id="@+id/templateStatusDetail3"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/templateStatusDetail2"
-            android:padding="10dp">
-            <TextView
-                android:layout_weight="1"
-                android:id="@+id/txtDirection"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:id="@+id/templateTemp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="方位：73 度"/>
-            <TextView
-                android:layout_weight="1"
-                android:id="@+id/txtVoice"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:text="音訊模組狀態：正常" />
-        </LinearLayout>
+                android:layout_marginVertical="10dp">
+                <TextView
+                    android:id="@+id/txtTemp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="溫度："
+                    android:textSize="14sp"/>
+                <TextView
+                    android:id="@+id/txtTempSpace"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="26.1"
+                    android:textSize="15sp"/>
+                <TextView
+                    android:id="@+id/txtTempUnit"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=" C"
+                    android:textSize="14sp"/>
+            </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/templateStatusDetail4"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/templateStatusDetail3"
-            android:padding="10dp">
-            <TextView
-                android:layout_weight="1"
-                android:id="@+id/txtDate"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:id="@+id/templateHumidity"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="日期：2023/10/22"/>
-            <TextView
-                android:layout_weight="1"
-                android:id="@+id/txtTime"
-                android:layout_width="0dp"
+                android:layout_marginVertical="10dp">
+                <TextView
+                    android:id="@+id/txtHumidity"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="溼度："
+                    android:textSize="14sp"/>
+                <TextView
+                    android:id="@+id/txtHumiditySpace"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="79.1"
+                    android:textSize="15sp"/>
+                <TextView
+                    android:id="@+id/txtHumidityUnit"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=" %"
+                    android:textSize="14sp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/templateVoice"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="時間：13:10:00" />
+                android:layout_marginVertical="10dp">
+                <TextView
+                    android:id="@+id/txtVoice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="音訊模組狀態："
+                    android:textSize="14sp"/>
+                <TextView
+                    android:id="@+id/txtVoiceSpace"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="正常"
+                    android:textSize="14sp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/templateTime"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="10dp">
+                <TextView
+                    android:id="@+id/txtTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="時間："
+                    android:textSize="14sp"/>
+                <TextView
+                    android:id="@+id/txtTimeSpace"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="13:10:00"
+                    android:textSize="15sp"/>
+            </LinearLayout>
         </LinearLayout>
-    </RelativeLayout>
+    </LinearLayout>
 
     <Button
         android:layout_width="wrap_content"
